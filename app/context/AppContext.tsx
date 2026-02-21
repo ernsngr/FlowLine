@@ -26,8 +26,9 @@ interface AppContextType {
     rating: number,
     distractions: string[],
     duration: number,
-    type: 'pomo' | 'break', // Yeni
-    interruptedCount: number // Yeni
+    type: 'pomo' | 'break',
+    interruptedCount: number,
+    targetDuration?: number
   }) => Promise<void>;
   todaySessionsCount: number;
   todayTotalPoints: number;
@@ -67,9 +68,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const hasLaunched = await AsyncStorage.getItem('alreadyLaunched');
         setIsFirstLaunch(hasLaunched !== 'true');
 
-        const savedSessions = await AsyncStorage.getItem('sessions_history');
-        if (savedSessions) {
-          setSessions(JSON.parse(savedSessions));
+        // --- ESKİ VERİLERİ SİLME (BİR KEZ ÇALIŞIR) ---
+        const dataMigrated = await AsyncStorage.getItem('data_migrated_v2');
+        if (!dataMigrated) {
+          await AsyncStorage.removeItem('sessions_history');
+          setSessions([]);
+          await AsyncStorage.setItem('data_migrated_v2', 'true');
+        } else {
+          const savedSessions = await AsyncStorage.getItem('sessions_history');
+          if (savedSessions) {
+            setSessions(JSON.parse(savedSessions));
+          }
         }
 
         const savedSettings = await AsyncStorage.getItem('user_settings');
@@ -120,20 +129,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     distractions: string[],
     duration: number,
     type: 'pomo' | 'break',
-    interruptedCount: number
+    interruptedCount: number,
+    targetDuration?: number // Hedeflenen süre (çarpan için)
   }) => {
     if (isSaving.current || sessionData.duration <= 0) return;
 
     try {
       isSaving.current = true;
 
-      // Puan Hesaplama Mantığı: 
-      // Rating (1-5) * 10 baz puan + (Süre / 5) bonus - (Kesinti * 2) ceza
-      const basePoints = sessionData.rating * 10;
-      const durationBonus = Math.floor(sessionData.duration / 5);
-      const interruptionPenalty = sessionData.interruptedCount * 2;
+      // 1. Günlük Limit Kontrolü (Max 10 Pomo oturumu)
+      const todaySessionsCount = sessions.filter(s => {
+        if (!s.date || s.type !== 'pomo') return false;
+        return new Date(s.date).toDateString() === new Date().toDateString();
+      }).length;
 
-      const finalPoints = Math.max(5, basePoints + durationBonus - interruptionPenalty);
+      let finalPoints = 0;
+
+      if (sessionData.type === 'pomo') {
+        if (todaySessionsCount < 10) {
+          // A. Sabit Dakika Başı Puan (1 Dk = 1 Puan)
+          const minutePoints = sessionData.duration;
+
+          // B. Tamamlama Çarpanı (Hedeflenen sürenin yüzdesi)
+          const target = sessionData.targetDuration || 25;
+          const completionRatio = Math.min(sessionData.duration / target, 1);
+          const completionMultiplier = completionRatio >= 1 ? 1.5 : (1 + (completionRatio * 0.5));
+
+          // C. Kesinti Cezası (Her durdurma -5 puan)
+          const interruptionPenalty = sessionData.interruptedCount * 5;
+
+          // D. Mola Bonusu Kontrolü (AsyncStorage'dan veya Context'ten çekilebilir)
+          const breakBonusActive = await AsyncStorage.getItem('next_session_bonus');
+          const multiplier = breakBonusActive === 'true' ? 1.2 : 1.0;
+          if (breakBonusActive === 'true') await AsyncStorage.removeItem('next_session_bonus');
+
+          finalPoints = Math.round(((minutePoints * completionMultiplier) - interruptionPenalty) * multiplier);
+          finalPoints = Math.max(0, finalPoints);
+        } else {
+          // Limit aşılmışsa 0 puan
+          finalPoints = 0;
+        }
+      } else if (sessionData.type === 'break') {
+        // Mola tamamlama kontrolü: Eğer hedeflenen mola süresi tamamlandıysa bonus set et
+        const targetBreak = shortBreak;
+        if (sessionData.duration >= targetBreak) {
+          await AsyncStorage.setItem('next_session_bonus', 'true');
+        }
+        return; // Mola seanslarını geçmişe kaydetmiyoruz şimdilik, sadece bonus veriyoruz
+      }
 
       const newSession: Session = {
         id: Date.now().toString(),

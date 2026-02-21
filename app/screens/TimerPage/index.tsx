@@ -13,10 +13,10 @@ const AD_UNIT_ID = __DEV__ ? TestIds.BANNER : "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXX
 export const TimerPage = () => {
   const navigation = useNavigation<any>();
   const { goal, pomodoroTime, shortBreak, autoStartTimer, autoStartBreaks } = useApp();
-  
+
   const [mode, setMode] = useState<TimerMode>('FOCUS');
   const [secondsLeft, setSecondsLeft] = useState(pomodoroTime * 60);
-  const [isActive, setIsActive] = useState(autoStartTimer); 
+  const [isActive, setIsActive] = useState(autoStartTimer);
   const [modalVisible, setModalVisible] = useState(false);
 
   // --- EKLEME: DURDURMA SAYACI ---
@@ -36,13 +36,13 @@ export const TimerPage = () => {
     Animated.timing(statusAnim, {
       toValue: isActive ? 1 : 0,
       duration: 300,
-      useNativeDriver: false, 
+      useNativeDriver: false,
     }).start();
   }, [isActive]);
 
   const animatedBg = statusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#1a1a1a', '#161b16'] 
+    outputRange: ['#1a1a1a', '#161b16']
   });
 
   const animatedBorder = statusAnim.interpolate({
@@ -85,28 +85,44 @@ export const TimerPage = () => {
 
   const completeSessionManually = (isAutoFinish = false) => {
     setModalVisible(false);
-    
+
     if (mode === 'FOCUS') {
       const initialSeconds = pomodoroTime * 60;
       const elapsedSeconds = initialSeconds - secondsLeft;
-      
+
       // Saniyeyi dakikaya çeviriyoruz. 
       // 20 saniye bile çalışsa 1 dk sayılsın (emek zayi olmasın) ama 0 ise 0 kalsın.
       const elapsedMinutes = Math.floor(elapsedSeconds / 60);
       const finalDuration = isAutoFinish ? pomodoroTime : (elapsedSeconds > 0 && elapsedSeconds < 60 ? 1 : elapsedMinutes);
 
-      navigation.navigate("SessionComplate", { 
+      navigation.navigate("SessionComplate", {
         actualDuration: finalDuration,
-        interruptedCount: interruptedCount // Sayacı gönderiyoruz
+        targetDuration: pomodoroTime, // Hedeflenen süreyi de gönderiyoruz
+        interruptedCount: interruptedCount
       });
     } else {
-      // Mola atlandığında veri kaydedilmez, sadece geri dönülür.
+      // Mola tamamlandığında veya atlandığında mola verisini kaydetmek için saveSession çağırıyoruz.
+      // saveSession içinde mola ise sadece bonus set ediliyor, geçmişe kaydedilmiyor.
+      const initialBreakSeconds = shortBreak * 60;
+      const elapsedBreakSeconds = initialBreakSeconds - secondsLeft;
+      const finalBreakDuration = Math.floor(elapsedBreakSeconds / 60);
+
+      const { saveSession } = useApp(); // useApp'ten çekiyoruz
+      saveSession({
+        goal: "Mola",
+        rating: 0,
+        distractions: [],
+        duration: finalBreakDuration,
+        type: 'break',
+        interruptedCount: 0
+      });
+
       navigation.goBack();
     }
   };
 
   const handleFinishAndNavigate = () => {
-    setIsActive(false); 
+    setIsActive(false);
     setModalVisible(true);
   };
 
@@ -115,7 +131,7 @@ export const TimerPage = () => {
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  
+
   const totalSecondsForMode = mode === 'FOCUS' ? pomodoroTime * 60 : shortBreak * 60;
   const progress = secondsLeft / totalSecondsForMode;
   const strokeDashoffset = circumference - progress * circumference;
@@ -128,7 +144,7 @@ export const TimerPage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-[#0a0d0a] pt-10">
-      
+
       <Modal animationType="fade" transparent={true} visible={modalVisible}>
         <Pressable className="flex-1 justify-center items-center bg-black/80 px-10" onPress={() => { setModalVisible(false); setIsActive(true); }}>
           <View className="w-full bg-[#111411] border border-white/10 rounded-[32px] p-8 items-center" onStartShouldSetResponder={() => true}>
@@ -163,17 +179,17 @@ export const TimerPage = () => {
           <View className="absolute items-center px-10">
             <Text className="text-7xl text-white font-light tracking-tighter">{formatTime(secondsLeft)}</Text>
             <Text className="text-[#5c635c] mt-2 font-bold uppercase tracking-[4px] text-xs">{mode === 'FOCUS' ? "HEDEF" : "DİNLEN"}</Text>
-            <Text numberOfLines={2} className="text-white text-lg font-medium mt-1 text-center">{mode === 'FOCUS' ? goal : "Enerji toplama zamanı"}</Text> 
+            <Text numberOfLines={2} className="text-white text-lg font-medium mt-1 text-center">{mode === 'FOCUS' ? goal : "Enerji toplama zamanı"}</Text>
           </View>
         </View>
       </View>
 
       <View className="w-full items-center mb-8">
         <View className="mb-10">
-          <TouchableOpacity 
-            onPress={handleToggleTimer} 
-            activeOpacity={0.8} 
-            style={{ backgroundColor: theme.primary }} 
+          <TouchableOpacity
+            onPress={handleToggleTimer}
+            activeOpacity={0.8}
+            style={{ backgroundColor: theme.primary }}
             className={`w-24 h-24 rounded-[32px] items-center justify-center shadow-2xl ${theme.shadow}`}
           >
             <Feather name={isActive ? "pause" : "play"} size={40} color="#051405" />
@@ -181,8 +197,8 @@ export const TimerPage = () => {
         </View>
 
         <View className="flex-row items-center justify-center px-8 w-full">
-          <TouchableOpacity 
-            onPress={() => { setSecondsLeft(totalSecondsForMode); setIsActive(false); setInterruptedCount(0); }} 
+          <TouchableOpacity
+            onPress={() => { setSecondsLeft(totalSecondsForMode); setIsActive(false); setInterruptedCount(0); }}
             className="w-full h-16 rounded-2xl bg-[#161b16] items-center justify-center border border-white/5"
           >
             <View className="flex-row items-center">

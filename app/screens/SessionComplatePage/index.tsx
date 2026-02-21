@@ -6,18 +6,19 @@ import { useApp } from "app/context/AppContext";
 
 export const SessionComplatePage = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>(); 
-  
+  const route = useRoute<any>();
+
   const { goal, saveSession, pomodoroTime } = useApp();
 
   // --- TIMER'DAN GELEN VERİLER ---
-  const spentTime = route.params?.actualDuration !== undefined 
-    ? route.params.actualDuration 
+  const spentTime = route.params?.actualDuration !== undefined
+    ? route.params.actualDuration
     : pomodoroTime;
 
   // Analiz merkezi için kritik parametreler
-  const sessionType = route.params?.type || 'pomo'; 
+  const sessionType = route.params?.type || 'pomo';
   const interruptedCount = route.params?.interruptedCount || 0;
+  const targetDuration = route.params?.targetDuration || pomodoroTime;
 
   // --- FORM STATE ---
   const [rating, setRating] = useState(3);
@@ -52,12 +53,13 @@ export const SessionComplatePage = () => {
         rating: rating,
         distractions: selectedDistractions,
         duration: Number(spentTime),
-        type: sessionType, 
+        type: sessionType,
         interruptedCount: Number(interruptedCount), // Sayısal olduğundan emin oluyoruz
+        targetDuration: Number(targetDuration)
       });
 
       // Ana sayfaya dön ve stack'i temizle
-      navigation.popToTop(); 
+      navigation.popToTop();
     } catch (error) {
       console.error("Kayıt hatası:", error);
       setIsSavingInProgress(false);
@@ -67,7 +69,7 @@ export const SessionComplatePage = () => {
   return (
     <SafeAreaView className="flex-1 bg-[#0a0d0a] pt-10">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 }}>
-        
+
         {/* ÜST KISIM - BAŞARI İKONU */}
         <View className="items-center mb-8">
           <View className="w-20 h-20 bg-[#44f24a]/10 rounded-full items-center justify-center mb-4">
@@ -83,25 +85,24 @@ export const SessionComplatePage = () => {
 
         {/* ANA KART */}
         <View className="w-full bg-[#161b16] rounded-[40px] p-8 border border-white/5 shadow-2xl">
-          
+
           <Text className="text-[#5c635c] font-bold uppercase tracking-widest text-[10px] mb-4 text-center">
             Odaklanma kaliten nasıldı?
           </Text>
-          
+
           {/* RATING SİSTEMİ */}
           <View className="flex-row justify-between mb-10">
             {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity 
-                key={star} 
+              <TouchableOpacity
+                key={star}
                 onPress={() => setRating(star)}
-                className={`w-12 h-12 rounded-2xl items-center justify-center border ${
-                  rating >= star ? 'bg-[#44f24a] border-[#44f24a]' : 'bg-[#0a0d0a] border-white/5'
-                }`}
+                className={`w-12 h-12 rounded-2xl items-center justify-center border ${rating >= star ? 'bg-[#44f24a] border-[#44f24a]' : 'bg-[#0a0d0a] border-white/5'
+                  }`}
               >
-                <Feather 
-                  name="zap" 
-                  size={20} 
-                  color={rating >= star ? "#051405" : "#2a2d2a"} 
+                <Feather
+                  name="zap"
+                  size={20}
+                  color={rating >= star ? "#051405" : "#2a2d2a"}
                 />
               </TouchableOpacity>
             ))}
@@ -117,12 +118,11 @@ export const SessionComplatePage = () => {
                 {distractions.map((item) => {
                   const isSelected = selectedDistractions.includes(item.id);
                   return (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={item.id}
                       onPress={() => toggleDistraction(item.id)}
-                      className={`flex-row items-center w-[48%] h-12 px-4 rounded-2xl mb-3 border ${
-                        isSelected ? 'bg-[#44f24a]/10 border-[#44f24a]' : 'bg-[#0a0d0a] border-white/5'
-                      }`}
+                      className={`flex-row items-center w-[48%] h-12 px-4 rounded-2xl mb-3 border ${isSelected ? 'bg-[#44f24a]/10 border-[#44f24a]' : 'bg-[#0a0d0a] border-white/5'
+                        }`}
                     >
                       <Feather name={item.icon as any} size={14} color={isSelected ? "#44f24a" : "#5c635c"} />
                       <Text className={`text-[11px] font-bold ml-2 ${isSelected ? 'text-[#44f24a]' : 'text-[#5c635c]'}`}>
@@ -141,7 +141,7 @@ export const SessionComplatePage = () => {
               <Text className="text-[#5c635c] text-[10px] uppercase font-black">Hedeflenen</Text>
               <Text className="text-white text-xs font-bold" numberOfLines={1}>{goal}</Text>
             </View>
-            
+
             {/* Analiz Merkezi için kritik veri: Kaç kez bölündü? */}
             <View className="flex-row items-center justify-between">
               <Text className="text-[#5c635c] text-[10px] uppercase font-black">Duraklatma</Text>
@@ -159,13 +159,12 @@ export const SessionComplatePage = () => {
 
         {/* KAYDET BUTONU */}
         <View className="w-full mt-10">
-          <TouchableOpacity 
-            onPress={handleSave} 
+          <TouchableOpacity
+            onPress={handleSave}
             activeOpacity={0.8}
             disabled={isSavingInProgress}
-            className={`w-full h-16 rounded-3xl items-center justify-center shadow-xl ${
-              isSavingInProgress ? 'bg-white/10' : 'bg-[#44f24a] shadow-green-500/20'
-            }`}
+            className={`w-full h-16 rounded-3xl items-center justify-center shadow-xl ${isSavingInProgress ? 'bg-white/10' : 'bg-[#44f24a] shadow-green-500/20'
+              }`}
           >
             <Text className={`text-base font-black uppercase tracking-widest ${isSavingInProgress ? 'text-[#5c635c]' : 'text-[#051405]'}`}>
               {isSavingInProgress ? "Kaydediliyor..." : "Verileri İşle ve Bitir"}
