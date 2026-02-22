@@ -17,6 +17,7 @@ import { DailySummaryPage } from './app/screens/DailySummaryPage';
 import { SettingsPage } from 'app/screens/SettingPage';
 import { DashboardPage } from 'app/screens/DashboardPage/DashboardPage';
 import { InsightsPage } from 'app/screens/InsightsPage/InsightsPage';
+import { SplashPage } from 'app/screens/SplashPage/SplashPage';
 
 import './global.css';
 
@@ -29,6 +30,7 @@ export type RootStackParamList = {
   SettingsPage: undefined;
   DashboardPage: undefined;
   InsightsPage: undefined;
+  SplashPage: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,35 +45,28 @@ const RootNavigator = () => {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isFirstLaunch ? (
-        // --- İLK KURULUM ---
-        <Stack.Screen name="OnboardingPage" component={OnboardingPage} />
-      ) : (
-        // --- ANA UYGULAMA (Giriş/Login ekranları tamamen kaldırıldı) ---
-        <Stack.Group>
-          {/* Uygulama artık her açılışta Hedef Belirleme ile başlar */}
-          <Stack.Screen name="GoalSettings" component={GoalSettingPage} />
-          <Stack.Screen name="TimerPage" component={TimerPage} />
-          <Stack.Screen name="DashboardPage" component={DashboardPage} />
-          <Stack.Screen name="SessionComplate" component={SessionComplatePage} />
-          <Stack.Screen name="DailySummary" component={DailySummaryPage} />
-          <Stack.Screen name="SettingsPage" component={SettingsPage} />
-          <Stack.Screen name="InsightsPage" component={InsightsPage} />
-        </Stack.Group>
-      )}
+    <Stack.Navigator initialRouteName="SplashPage" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="SplashPage" component={SplashPage} />
+      <Stack.Screen name="OnboardingPage" component={OnboardingPage} />
+      <Stack.Screen name="GoalSettings" component={GoalSettingPage} />
+      <Stack.Screen name="TimerPage" component={TimerPage} />
+      <Stack.Screen name="DashboardPage" component={DashboardPage} />
+      <Stack.Screen name="SessionComplate" component={SessionComplatePage} />
+      <Stack.Screen name="DailySummary" component={DailySummaryPage} />
+      <Stack.Screen name="SettingsPage" component={SettingsPage} />
+      <Stack.Screen name="InsightsPage" component={InsightsPage} />
     </Stack.Navigator>
   );
 };
 
 const App = () => {
   return (
-      <AppProvider>
-        <StatusBar style="light" />
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </AppProvider>
+    <AppProvider>
+      <StatusBar style="light" />
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </AppProvider>
   );
 };
 

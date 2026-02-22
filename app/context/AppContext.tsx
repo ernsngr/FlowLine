@@ -1,5 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RewardedAd, TestIds, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.REWARDED : "ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx";
 
 // 1. Veri Yapıları - Geliştirildi
 export interface Session {
@@ -45,6 +48,10 @@ interface AppContextType {
   soundEnabled: boolean;
   setSoundEnabled: (v: boolean) => void;
   saveSettings: () => Promise<void>;
+  // --- Reklam Yönetimi ---
+  rewardedAd: RewardedAd | null;
+  rewardedAdLoaded: boolean;
+  loadRewardedAd: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -60,13 +67,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [autoStartTimer, setAutoStartTimer] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // --- Reklam Durumu ---
+  const [rewardedAdLoaded, setRewardedAdLoaded] = useState(false);
+  const rewardedAdRef = useRef<RewardedAd | null>(null);
+
   const isSaving = useRef(false);
+
+  const loadRewardedAd = () => {
+    if (!rewardedAdRef.current) {
+      const ad = RewardedAd.createForAdRequest(adUnitId, {
+        requestNonPersonalizedAdsOnly: true,
+      });
+
+      ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        setRewardedAdLoaded(true);
+      });
+
+      ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+        setRewardedAdLoaded(false);
+        rewardedAdRef.current = null;
+        loadRewardedAd(); // Bir sonraki kullanım için tekrar yükle
+      });
+
+      ad.addAdEventListener(AdEventType.CLOSED, () => {
+        setRewardedAdLoaded(false);
+        rewardedAdRef.current = null;
+        loadRewardedAd();
+      });
+
+      rewardedAdRef.current = ad;
+    }
+    rewardedAdRef.current.load();
+  };
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const hasLaunched = await AsyncStorage.getItem('alreadyLaunched');
         setIsFirstLaunch(hasLaunched !== 'true');
+
+        // Reklamı erkenden yüklemeye başla
+        loadRewardedAd();
 
         // --- ESKİ VERİLERİ SİLME (BİR KEZ ÇALIŞIR) ---
         const dataMigrated = await AsyncStorage.getItem('data_migrated_v2');
@@ -230,7 +271,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       autoStartBreaks, setAutoStartBreaks,
       autoStartTimer, setAutoStartTimer,
       soundEnabled, setSoundEnabled,
-      saveSettings
+      saveSettings,
+      rewardedAd: rewardedAdRef.current,
+      rewardedAdLoaded,
+      loadRewardedAd
     }}>
       {children}
     </AppContext.Provider>
