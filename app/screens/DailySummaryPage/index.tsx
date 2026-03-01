@@ -1,26 +1,27 @@
 import React from "react";
-import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { useApp } from "app/context/AppContext"; // Context'i bağladık
 
 export const DailySummaryPage = () => {
   const navigation = useNavigation<any>();
-  
+
   // Context'ten bugün tamamlanan seans sayısını ve toplam puanı çekiyoruz
   const { todaySessionsCount, todayTotalPoints } = useApp();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0a0d0a] items-center justify-between py-12">
-      
+    <SafeAreaView className="flex-1 bg-[#0a0d0a] items-center justify-between">
+
       {/* ÜST BAR */}
       <View className="w-full flex-row justify-between px-8 items-center">
-        <TouchableOpacity onPress={() => navigation.popToTop()}> 
+        <TouchableOpacity onPress={() => navigation.popToTop()}>
           <Feather name="x" size={28} color="white" />
         </TouchableOpacity>
-        
+
         <Text className="text-white text-lg font-bold">Daily Summary</Text>
-        
+
         <View className="w-7" />
       </View>
 
@@ -59,7 +60,7 @@ export const DailySummaryPage = () => {
 
       {/* ALT AKSİYONLAR */}
       <View className="w-full px-8 items-center">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => navigation.navigate("GoalSettings")}
           activeOpacity={0.8}
           className="w-full h-16 bg-[#44f24a] rounded-2xl flex-row items-center justify-center shadow-xl shadow-green-500/30"

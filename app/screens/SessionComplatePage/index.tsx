@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { useApp } from "app/context/AppContext";
@@ -47,14 +48,30 @@ export const SessionComplatePage = () => {
     try {
       setIsSavingInProgress(true);
 
-      // Veritabanına/Context'e gönderilen data paketi
+      // 1. Eğer mola verilmişse önce mola oturumunu kaydet (Bonus aktifleşsin)
+      const breakDuration = route.params?.breakDuration || 0;
+      const targetBreakDuration = route.params?.targetBreakDuration || 5;
+
+      if (breakDuration > 0) {
+        await saveSession({
+          goal: "Mola",
+          rating: 0,
+          distractions: [],
+          duration: Number(breakDuration),
+          type: 'break',
+          interruptedCount: 0,
+          targetDuration: Number(targetBreakDuration)
+        });
+      }
+
+      // 2. Şimdi ana çalışma oturumunu kaydet (Mola bonusunu kullanacak)
       await saveSession({
         goal: goal,
         rating: rating,
         distractions: selectedDistractions,
         duration: Number(spentTime),
-        type: sessionType,
-        interruptedCount: Number(interruptedCount), // Sayısal olduğundan emin oluyoruz
+        type: sessionType as any,
+        interruptedCount: Number(interruptedCount),
         targetDuration: Number(targetDuration)
       });
 
@@ -67,7 +84,7 @@ export const SessionComplatePage = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0a0d0a] pt-10">
+    <SafeAreaView className="flex-1 bg-[#0a0d0a]">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 }}>
 
         {/* ÜST KISIM - BAŞARI İKONU */}

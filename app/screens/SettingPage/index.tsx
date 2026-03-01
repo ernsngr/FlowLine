@@ -1,18 +1,19 @@
 import React, { useRef } from "react";
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Switch } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { useApp } from "app/context/AppContext";
 
 export const SettingsPage = () => {
   const navigation = useNavigation<any>();
-  const { 
+  const {
     pomodoroTime, setPomodoroTime,
     shortBreak, setShortBreak,
     autoStartBreaks, setAutoStartBreaks,
     autoStartTimer, setAutoStartTimer,
     soundEnabled, setSoundEnabled,
-    saveSettings 
+    saveSettings
   } = useApp();
 
   const handleDone = async () => {
@@ -36,16 +37,16 @@ export const SettingsPage = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0a0d0a] pt-10">
-      
+    <SafeAreaView className="flex-1 bg-[#0a0d0a]">
+
       {/* HEADER */}
-      <View className="w-full flex-row justify-between px-8 items-center py-6 mt-2">
+      <View className="w-full flex-row justify-between px-8 items-center py-6">
         <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Feather name="chevron-left" size={28} color="white" />
+          <Feather name="chevron-left" size={28} color="white" />
         </TouchableOpacity>
         <Text className="text-white text-xl font-black uppercase tracking-widest">Ayarlar</Text>
         <TouchableOpacity onPress={handleDone} activeOpacity={0.7}>
-            <Text className="text-[#44f24a] text-lg font-black uppercase">Tamam</Text>
+          <Text className="text-[#44f24a] text-lg font-black uppercase">Tamam</Text>
         </TouchableOpacity>
       </View>
 
@@ -69,20 +70,20 @@ export const SettingsPage = () => {
                 </View>
               </View>
               <View className="flex-row items-center bg-[#0a0d0a] rounded-2xl p-1 border border-white/5">
-                <TouchableOpacity 
-                  onPress={() => adjustTime('pomo', -5)} 
-                  activeOpacity={1} 
-                  className="w-10 h-10 items-center justify-center"
-                >
-                    <Feather name="minus" size={18} color="white" />
-                </TouchableOpacity>
-                <Text className="text-white font-black text-lg mx-2 w-10 text-center">{pomodoroTime}</Text>
-                <TouchableOpacity 
-                  onPress={() => adjustTime('pomo', 5)} 
+                <TouchableOpacity
+                  onPress={() => adjustTime('pomo', -5)}
                   activeOpacity={1}
                   className="w-10 h-10 items-center justify-center"
                 >
-                    <Feather name="plus" size={18} color="white" />
+                  <Feather name="minus" size={18} color="white" />
+                </TouchableOpacity>
+                <Text className="text-white font-black text-lg mx-2 w-10 text-center">{pomodoroTime}</Text>
+                <TouchableOpacity
+                  onPress={() => adjustTime('pomo', 5)}
+                  activeOpacity={1}
+                  className="w-10 h-10 items-center justify-center"
+                >
+                  <Feather name="plus" size={18} color="white" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -99,20 +100,20 @@ export const SettingsPage = () => {
                 </View>
               </View>
               <View className="flex-row items-center bg-[#0a0d0a] rounded-2xl p-1 border border-white/5">
-                <TouchableOpacity 
-                  onPress={() => adjustTime('break', -5)} 
-                  activeOpacity={1} 
-                  className="w-10 h-10 items-center justify-center"
-                >
-                    <Feather name="minus" size={18} color="white" />
-                </TouchableOpacity>
-                <Text className="text-white font-black text-lg mx-2 w-10 text-center">{shortBreak}</Text>
-                <TouchableOpacity 
-                  onPress={() => adjustTime('break', 5)} 
+                <TouchableOpacity
+                  onPress={() => adjustTime('break', -5)}
                   activeOpacity={1}
                   className="w-10 h-10 items-center justify-center"
                 >
-                    <Feather name="plus" size={18} color="white" />
+                  <Feather name="minus" size={18} color="white" />
+                </TouchableOpacity>
+                <Text className="text-white font-black text-lg mx-2 w-10 text-center">{shortBreak}</Text>
+                <TouchableOpacity
+                  onPress={() => adjustTime('break', 5)}
+                  activeOpacity={1}
+                  className="w-10 h-10 items-center justify-center"
+                >
+                  <Feather name="plus" size={18} color="white" />
                 </TouchableOpacity>
               </View>
             </View>

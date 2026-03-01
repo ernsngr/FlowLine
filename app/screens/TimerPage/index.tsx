@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, SafeAreaView, Animated, Modal, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, Animated, Modal, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Svg, { Circle } from "react-native-svg";
 import Feather from "@expo/vector-icons/Feather";
@@ -21,6 +22,13 @@ export const TimerPage = () => {
 
   // --- EKLEME: DURDURMA SAYACI ---
   const [interruptedCount, setInterruptedCount] = useState(0);
+
+  // --- YENİ: BEKLEYEN VERİ SAKLAMA ---
+  const [pendingWorkData, setPendingWorkData] = useState<{
+    actualDuration: number;
+    interruptedCount: number;
+    targetDuration: number;
+  } | null>(null);
 
   const statusAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
 
@@ -64,11 +72,16 @@ export const TimerPage = () => {
     } else if (secondsLeft === 0) {
       clearInterval(interval);
       if (mode === 'FOCUS') {
-        // Odak bittiğinde doğrudan başarı sayfasına gönder (Otomatik Tamamlama)
-        completeSessionManually(true);
+        // Odak bittiğinde molaya geçiş yap
+        setPendingWorkData({
+          actualDuration: pomodoroTime,
+          interruptedCount: interruptedCount,
+          targetDuration: pomodoroTime
+        });
+        setMode('BREAK');
       } else {
-        // Mola bittiğinde ana ekrana dön
-        navigation.goBack();
+        // Mola bittiğinde özet sayfasına yönlendir
+        navigateToSummary();
       }
     }
     return () => clearInterval(interval);
@@ -83,41 +96,59 @@ export const TimerPage = () => {
     setIsActive(!isActive);
   };
 
-  const completeSessionManually = (isAutoFinish = false) => {
-    setModalVisible(false);
+  const navigateToSummary = (isManual = false) => {
+    const initialBreakSeconds = shortBreak * 60;
+    const elapsedBreakSeconds = initialBreakSeconds - secondsLeft;
+    const finalBreakDuration = Math.floor(elapsedBreakSeconds / 60);
 
+    // Eğer odak modundan direkt geçiş yapılıyorsa (mola verilmeden)
     if (mode === 'FOCUS') {
       const initialSeconds = pomodoroTime * 60;
       const elapsedSeconds = initialSeconds - secondsLeft;
-
-      // Saniyeyi dakikaya çeviriyoruz. 
-      // 20 saniye bile çalışsa 1 dk sayılsın (emek zayi olmasın) ama 0 ise 0 kalsın.
       const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-      const finalDuration = isAutoFinish ? pomodoroTime : (elapsedSeconds > 0 && elapsedSeconds < 60 ? 1 : elapsedMinutes);
+      const finalDuration = (elapsedSeconds > 0 && elapsedSeconds < 60 ? 1 : elapsedMinutes);
 
       navigation.navigate("SessionComplate", {
         actualDuration: finalDuration,
-        targetDuration: pomodoroTime, // Hedeflenen süreyi de gönderiyoruz
-        interruptedCount: interruptedCount
+        targetDuration: pomodoroTime,
+        interruptedCount: interruptedCount,
+        breakDuration: 0,
+        targetBreakDuration: shortBreak,
+        type: 'pomo'
       });
+    } else if (pendingWorkData) {
+      // Bekleyen iş verisi ve mola verisi ile git
+      navigation.navigate("SessionComplate", {
+        actualDuration: pendingWorkData.actualDuration,
+        targetDuration: pendingWorkData.targetDuration,
+        interruptedCount: pendingWorkData.interruptedCount,
+        breakDuration: finalBreakDuration,
+        targetBreakDuration: shortBreak,
+        type: 'pomo'
+      });
+    }
+  };
+
+  const completeSessionManually = () => {
+    setModalVisible(false);
+
+    if (mode === 'FOCUS') {
+      // Önce verileri hazırla
+      const initialSeconds = pomodoroTime * 60;
+      const elapsedSeconds = initialSeconds - secondsLeft;
+      const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+      const finalDuration = (elapsedSeconds > 0 && elapsedSeconds < 60 ? 1 : elapsedMinutes);
+
+      setPendingWorkData({
+        actualDuration: finalDuration,
+        interruptedCount: interruptedCount,
+        targetDuration: pomodoroTime
+      });
+
+      // Molaya geç veya direkt bitir (Seçimi kullanıcıya modalda bırakabiliriz ama şu anki akışta molaya geçiyor)
+      setMode('BREAK');
     } else {
-      // Mola tamamlandığında veya atlandığında mola verisini kaydetmek için saveSession çağırıyoruz.
-      // saveSession içinde mola ise sadece bonus set ediliyor, geçmişe kaydedilmiyor.
-      const initialBreakSeconds = shortBreak * 60;
-      const elapsedBreakSeconds = initialBreakSeconds - secondsLeft;
-      const finalBreakDuration = Math.floor(elapsedBreakSeconds / 60);
-
-      const { saveSession } = useApp(); // useApp'ten çekiyoruz
-      saveSession({
-        goal: "Mola",
-        rating: 0,
-        distractions: [],
-        duration: finalBreakDuration,
-        type: 'break',
-        interruptedCount: 0
-      });
-
-      navigation.goBack();
+      navigateToSummary(true);
     }
   };
 
@@ -143,7 +174,7 @@ export const TimerPage = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0a0d0a] pt-10">
+    <SafeAreaView className="flex-1 bg-[#0a0d0a]">
 
       <Modal animationType="fade" transparent={true} visible={modalVisible}>
         <Pressable className="flex-1 justify-center items-center bg-black/80 px-10" onPress={() => { setModalVisible(false); setIsActive(true); }}>
@@ -151,17 +182,17 @@ export const TimerPage = () => {
             <View className="w-16 h-16 bg-[#161b16] rounded-2xl items-center justify-center mb-6 border border-white/5">
               <Feather name={mode === 'FOCUS' ? "check-circle" : "skip-forward"} size={32} color={theme.primary} />
             </View>
-            <Text className="text-white text-xl font-black uppercase tracking-widest text-center mb-2">{mode === 'FOCUS' ? "OTURUMU TAMAMLA" : "MOLAYI ATLA"}</Text>
-            <Text className="text-[#5c635c] text-center font-medium mb-8">{mode === 'FOCUS' ? "Şu ana kadar yaptığın çalışmayı kaydedip özet ekranına geçmek istiyor musun?" : "Dinlenmeyi sonlandırıp ana ekrana dönmek üzeresin."}</Text>
+            <Text className="text-white text-xl font-black uppercase tracking-widest text-center mb-2">{mode === 'FOCUS' ? "ODAKLANMAYI BİTİR" : "MOLAYI SONLANDIR"}</Text>
+            <Text className="text-[#5c635c] text-center font-medium mb-8">{mode === 'FOCUS' ? "Çalışmanı duraklatıp mola vermek mi istiyorsun?" : "Dinlenmeyi sonlandırıp özet ekranına geçmek istiyor musun?"}</Text>
             <View className="w-full flex-row">
               <TouchableOpacity onPress={() => { setModalVisible(false); setIsActive(true); }} className="flex-1 h-14 bg-[#1a1a1a] rounded-2xl items-center justify-center mr-3 border border-white/5"><Text className="text-white font-bold uppercase text-[10px] tracking-widest">VAZGEÇ</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => mode === 'FOCUS' ? completeSessionManually() : navigation.goBack()} style={{ backgroundColor: theme.primary }} className="flex-1 h-14 rounded-2xl items-center justify-center"><Text className="text-[#051405] font-black uppercase text-[10px] tracking-widest">{mode === 'FOCUS' ? "BİTİR" : "ATLA"}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => completeSessionManually()} style={{ backgroundColor: theme.primary }} className="flex-1 h-14 rounded-2xl items-center justify-center"><Text className="text-[#051405] font-black uppercase text-[10px] tracking-widest">{mode === 'FOCUS' ? "MOLAYA GEÇ" : "BİTİR"}</Text></TouchableOpacity>
             </View>
           </View>
         </Pressable>
       </Modal>
 
-      <View className="w-full flex-row justify-between px-8 items-center mt-6">
+      <View className="w-full flex-row justify-between px-8 items-center">
         <TouchableOpacity onPress={() => navigation.goBack()}><Feather name="x" size={28} color="white" /></TouchableOpacity>
         <Animated.View style={{ backgroundColor: animatedBg, borderColor: animatedBorder, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 100, flexDirection: 'row', alignItems: 'center' }}>
           <View className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: isActive ? theme.primary : '#5c635c' }} />
@@ -209,7 +240,7 @@ export const TimerPage = () => {
         </View>
 
         <TouchableOpacity onPress={handleFinishAndNavigate} className="mt-8">
-          <Text style={{ color: mode === 'FOCUS' ? '#44f24a' : '#3b82f6' }} className="font-black text-[11px] uppercase tracking-[3px]">{mode === 'FOCUS' ? "Oturumu Tamamla" : "Molayı Atla"}</Text>
+          <Text style={{ color: mode === 'FOCUS' ? '#44f24a' : '#3b82f6' }} className="font-black text-[11px] uppercase tracking-[3px]">{mode === 'FOCUS' ? "MOLAYA GEÇ" : "ÖZETİ GÖR VE BİTİR"}</Text>
         </TouchableOpacity>
       </View>
 

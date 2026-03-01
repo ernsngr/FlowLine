@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { useApp } from "app/context/AppContext";
@@ -90,8 +91,8 @@ export const DashboardPage = () => {
   }, [sessions]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#050705] pt-10">
-      <View className="h-16 flex-row items-center px-6 mt-4">
+    <SafeAreaView className="flex-1 bg-[#050705]">
+      <View className="h-16 flex-row items-center px-6">
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           className="w-10 h-10 bg-[#111411] rounded-xl items-center justify-center border border-white/5"

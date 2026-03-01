@@ -1,13 +1,13 @@
 import React, { useState, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  SafeAreaView, 
-  FlatList, 
-  Dimensions, 
-  TouchableOpacity, 
-  Animated 
+import {
+  View,
+  Text,
+  FlatList,
+  Dimensions,
+  TouchableOpacity,
+  Animated
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { useApp } from "app/context/AppContext"; // Context'i ekledik
@@ -124,17 +124,17 @@ export const OnboardingPage = () => {
               extrapolate: "clamp",
             });
             return (
-              <Animated.View 
-                key={i} 
-                style={{ width: dotWidth, opacity }} 
-                className="h-2 bg-[#44f24a] rounded-full mx-1" 
+              <Animated.View
+                key={i}
+                style={{ width: dotWidth, opacity }}
+                className="h-2 bg-[#44f24a] rounded-full mx-1"
               />
             );
           })}
         </View>
 
         {/* İleri / Başla Butonu */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={scrollToNext}
           className="bg-[#44f24a] h-16 rounded-[24px] items-center justify-center shadow-xl shadow-green-500/20"
         >

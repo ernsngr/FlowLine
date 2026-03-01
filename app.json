@@ -1,32 +1,32 @@
 {
   "expo": {
-    "name": "my-expo-app",
-    "slug": "my-expo-app",
+    "name": "FlowLine",
+    "slug": "FlowLine",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./app/assets/flowlinelogo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./app/assets/splashscreen.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050705"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kendiadiniz.uygulamaadinizi"
+      "bundleIdentifier": "com.eren.flowline"
     },
     "android": {
-      "package": "com.kendiadiniz.uygulamaadinizi",
+      "package": "com.eren.flowline",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./app/assets/flowlinelogo.png",
+        "backgroundColor": "#050705"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./app/assets/flowlinelogo.png"
     },
     "experiments": {
       "tsconfigPaths": true

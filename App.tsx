@@ -18,8 +18,14 @@ import { SettingsPage } from 'app/screens/SettingPage';
 import { DashboardPage } from 'app/screens/DashboardPage/DashboardPage';
 import { InsightsPage } from 'app/screens/InsightsPage/InsightsPage';
 import { SplashPage } from 'app/screens/SplashPage/SplashPage';
+import * as SplashScreen from 'expo-splash-screen';
 
 import './global.css';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might cause some errors here, which is safe to ignore */
+});
 
 export type RootStackParamList = {
   OnboardingPage: undefined;
@@ -39,13 +45,22 @@ const RootNavigator = () => {
   // Contexte eklediğimiz isFirstLaunch bilgisini kullanıyoruz
   const { isFirstLaunch } = useApp();
 
-  // Veri yüklenme kontrolü (AsyncStorage'dan sonuç gelene kadar bekler)
+  // Native Splash'i hemen gizle, kendi SplashPage'imize geçelim
+  React.useEffect(() => {
+    SplashScreen.hideAsync().catch(() => { });
+  }, []);
+
   if (isFirstLaunch === null) {
-    return <View className="flex-1 bg-[#0a0d0a]" />;
+    return <View className="flex-1 bg-[#050705]" />;
   }
 
   return (
-    <Stack.Navigator initialRouteName="SplashPage" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName="SplashPage"
+      screenOptions={{
+        headerShown: false
+      }}
+    >
       <Stack.Screen name="SplashPage" component={SplashPage} />
       <Stack.Screen name="OnboardingPage" component={OnboardingPage} />
       <Stack.Screen name="GoalSettings" component={GoalSettingPage} />
